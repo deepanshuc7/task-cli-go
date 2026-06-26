@@ -13,7 +13,7 @@ type Task struct {
 	ID          int       `json:"id"`
 	Description string    `json:"description"`
 	Status      string    `json:"status"`
-	CreateAt    time.Time `json:"createAt"`
+	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
@@ -42,7 +42,7 @@ func loadTasks() ([]Task, error) {
 
 func saveTasks(tasks []Task) error {
 	data, err := json.MarshalIndent(tasks, "", " ")
-	if err != nil{
+	if err != nil {
 		return nil
 	}
 
@@ -61,7 +61,45 @@ func main() {
 
 	switch command {
 	case "add":
-		fmt.Println("Add command selected")
+		if len(args) < 3 {
+			fmt.Println("Error: task description is required")
+			fmt.Println(`Usage: task-cli add "Buy groceries"`)
+			return
+		}
+
+		description := args[2]
+
+		tasks, err := loadTasks()
+		if err != nil {
+			fmt.Println("Error loading tasks:", err)
+			return
+		}
+
+		newID := 1
+		if len(tasks) > 0 {
+			newID = tasks[len(tasks)-1].ID + 1
+		}
+
+		now := time.Now()
+
+		newTask := Task{
+			ID:          newID,
+			Description: description,
+			Status:      "todo",
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}
+
+		tasks = append(tasks, newTask)
+
+		err = saveTasks(tasks)
+		if err != nil {
+			fmt.Println("Error saving task:", err)
+			return
+		}
+
+		fmt.Printf("Task added successfully (ID: %d)\n", newTask.ID)
+
 	case "list":
 		tasks, err := loadTasks()
 		if err != nil {
