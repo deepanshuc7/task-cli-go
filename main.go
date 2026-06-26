@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -47,6 +48,16 @@ func saveTasks(tasks []Task) error {
 	}
 
 	return os.WriteFile(fileName, data, 0644)
+}
+
+func findTaskIndexByID(tasks []Task, id int) int {
+	for index, task := range tasks {
+		if task.ID == id {
+			return index
+		}
+	}
+
+	return -1
 }
 
 func main() {
@@ -112,22 +123,167 @@ func main() {
 			return
 		}
 
+		filter := ""
+		if len(args) >= 3 {
+			filter = args[2]
+
+			if filter != "todo" && filter != "in-progress" && filter != "done" {
+				fmt.Println("Error: invalid status filter")
+				fmt.Println("Allowed filters: todo, in-progress, done")
+				return
+			}
+		}
+
+		found := false
+
 		for _, task := range tasks {
-			fmt.Printf(
-				"ID: %d | Status: %s | Description: %s\n",
-				task.ID,
-				task.Status,
-				task.Description,
-			)
+			if filter == "" || task.Status == filter {
+				fmt.Printf(
+					"ID: %d | Status: %s | Description: %s\n",
+					task.ID,
+					task.Status,
+					task.Description,
+				)
+				found = true
+			}
+		}
+
+		if !found {
+			fmt.Println("No tasks found for this status.")
 		}
 	case "update":
-		fmt.Println("Update command selected")
+		if len(args) < 4 {
+			fmt.Println(`Usage: task-cli update <id> "New description"`)
+			return
+		}
+
+		id, err := strconv.Atoi(args[2])
+		if err != nil {
+			fmt.Println("Error: task ID must be a number")
+			return
+		}
+
+		newDescription := args[3]
+
+		tasks, err := loadTasks()
+		if err != nil {
+			fmt.Println("Error loading tasks:", err)
+			return
+		}
+
+		index := findTaskIndexByID(tasks, id)
+		if index == -1 {
+			fmt.Println("Error: task not found")
+			return
+		}
+
+		tasks[index].Description = newDescription
+		tasks[index].UpdatedAt = time.Now()
+
+		if err := saveTasks(tasks); err != nil {
+			fmt.Println("Error saving tasks:", err)
+			return
+		}
+
+		fmt.Println("Task updated successfully")
 	case "delete":
-		fmt.Println("Delete command selected")
+		if len(args) < 3 {
+			fmt.Println("Usage: task-cli delete <id>")
+			return
+		}
+
+		id, err := strconv.Atoi(args[2])
+		if err != nil {
+			fmt.Println("Error: task ID must be a number")
+			return
+		}
+
+		tasks, err := loadTasks()
+		if err != nil {
+			fmt.Println("Error loading tasks:", err)
+			return
+		}
+
+		index := findTaskIndexByID(tasks, id)
+		if index == -1 {
+			fmt.Println("Error: task not found")
+			return
+		}
+
+		tasks = append(tasks[:index], tasks[index+1:]...)
+
+		if err := saveTasks(tasks); err != nil {
+			fmt.Println("Error saving tasks:", err)
+			return
+		}
+
+		fmt.Println("Task deleted successfully")
 	case "mark-in-progress":
-		fmt.Println("Mark in progress command selected")
+		if len(args) < 3 {
+			fmt.Println("Usage: task-cli mark-in-progress <id>")
+			return
+		}
+
+		id, err := strconv.Atoi(args[2])
+		if err != nil {
+			fmt.Println("Error: task ID must be a number")
+			return
+		}
+
+		tasks, err := loadTasks()
+		if err != nil {
+			fmt.Println("Error loading tasks:", err)
+			return
+		}
+
+		index := findTaskIndexByID(tasks, id)
+		if index == -1 {
+			fmt.Println("Error: task not found")
+			return
+		}
+
+		tasks[index].Status = "in-progress"
+		tasks[index].UpdatedAt = time.Now()
+
+		if err := saveTasks(tasks); err != nil {
+			fmt.Println("Error saving tasks:", err)
+			return
+		}
+
+		fmt.Println("Task marked as in-progress")
 	case "mark-done":
-		fmt.Println("Mark done command selected")
+		if len(args) < 3 {
+			fmt.Println("Usage: task-cli mark-done <id>")
+			return
+		}
+
+		id, err := strconv.Atoi(args[2])
+		if err != nil {
+			fmt.Println("Error: task ID must be a number")
+			return
+		}
+
+		tasks, err := loadTasks()
+		if err != nil {
+			fmt.Println("Error loading tasks:", err)
+			return
+		}
+
+		index := findTaskIndexByID(tasks, id)
+		if index == -1 {
+			fmt.Println("Error: task not found")
+			return
+		}
+
+		tasks[index].Status = "done"
+		tasks[index].UpdatedAt = time.Now()
+
+		if err := saveTasks(tasks); err != nil {
+			fmt.Println("Error saving tasks:", err)
+			return
+		}
+
+		fmt.Println("Task marked as done")
 	default:
 		fmt.Println("Unknown command:", command)
 	}
