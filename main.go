@@ -40,6 +40,15 @@ func loadTasks() ([]Task, error) {
 	return tasks, nil
 }
 
+func saveTasks(tasks []Task) error {
+	data, err := json.MarshalIndent(tasks, "", " ")
+	if err != nil{
+		return nil
+	}
+
+	return os.WriteFile(fileName, data, 0644)
+}
+
 func main() {
 	args := os.Args
 
