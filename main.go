@@ -103,11 +103,23 @@ func main() {
 	case "list":
 		tasks, err := loadTasks()
 		if err != nil {
-			fmt.Println("Erro loading tasks: ", err)
+			fmt.Println("Error loading tasks:", err)
 			return
 		}
 
-		fmt.Println(tasks)
+		if len(tasks) == 0 {
+			fmt.Println("No tasks found.")
+			return
+		}
+
+		for _, task := range tasks {
+			fmt.Printf(
+				"ID: %d | Status: %s | Description: %s\n",
+				task.ID,
+				task.Status,
+				task.Description,
+			)
+		}
 	case "update":
 		fmt.Println("Update command selected")
 	case "delete":
